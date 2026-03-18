@@ -361,6 +361,74 @@ class _MdEditorState extends State<MdEditor> {
     widget.onTextChanged?.call(textController.text);
   }
 
+  Future<void> _onTapLink() async {
+    var selection = textController.selection;
+    final text = textController.text;
+
+    if (selection.baseOffset == -1) {
+      selection = TextSelection.collapsed(offset: text.length);
+    }
+
+    final selectedText = text.substring(selection.start, selection.end);
+    String? inputUrl;
+    String? inputText;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        final urlController = TextEditingController();
+        final textInputController = TextEditingController(text: selectedText);
+        return AlertDialog(
+          title: const Text('Insert Link'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: urlController,
+                decoration: const InputDecoration(
+                  labelText: 'URL',
+                  hintText: 'https://example.com',
+                ),
+              ),
+              TextField(
+                controller: textInputController,
+                decoration: const InputDecoration(
+                  labelText: 'Text',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                inputUrl = urlController.text;
+                inputText = textInputController.text;
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (inputUrl != null && inputText != null) {
+      final newText = '[$inputText]($inputUrl)';
+      final textBefore = text.substring(0, selection.start);
+      final textAfter = text.substring(selection.end);
+
+      textController.text = '$textBefore$newText$textAfter';
+      textController.selection = TextSelection.collapsed(
+        offset: selection.start + newText.length,
+      );
+      widget.onTextChanged?.call(textController.text);
+    }
+  }
+
   /// Returns a `ButtonStyle` to ensure consistent styling for the toolbar icons.
   ButtonStyle buttonStyle() {
     return ButtonStyle(
@@ -464,7 +532,7 @@ class _MdEditorState extends State<MdEditor> {
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Link',
-                      onPressed: () => applyStyle(MarkdownStyle.link),
+                      onPressed: _onTapLink,
                       icon: PhosphorIcon(PhosphorIconsBold.link),
                     ),
                     IconButton(
