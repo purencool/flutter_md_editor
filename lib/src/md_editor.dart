@@ -337,9 +337,8 @@ class _MdEditorState extends State<MdEditor> {
             child: Column(
               children: [
                 /// Toolbar for markdown style buttons.
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(children: [
+                Wrap(
+                  children: [
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Save',
@@ -489,7 +488,7 @@ class _MdEditorState extends State<MdEditor> {
                       onPressed: () => applyStyle(MarkdownStyle.emoji),
                       icon: PhosphorIcon(PhosphorIconsBold.smiley),
                     ),
-                  ]),
+                  ],
                 ),
                 Expanded(
                   child: TextField(
