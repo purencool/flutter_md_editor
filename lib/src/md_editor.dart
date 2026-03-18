@@ -9,8 +9,68 @@ enum MarkdownStyle {
   /// Applies italic style, using `*text*`.
   italic,
 
-  /// Applies a title style (H1), using `# text`.
-  title,
+  /// Applies heading 1 style, using `# text`.
+  h1,
+
+  /// Applies heading 2 style, using `## text`.
+  h2,
+
+  /// Applies heading 3 style, using `### text`.
+  h3,
+
+  /// Applies blockquote style, using `> text`.
+  blockquote,
+
+  /// Applies ordered list style, using `1. text`.
+  orderedList,
+
+  /// Applies unordered list style, using `- text`.
+  unorderedList,
+
+  /// Applies inline code style, using `` `text` ``.
+  code,
+
+  /// Inserts a horizontal rule, using `---`.
+  horizontalRule,
+
+  /// Inserts a link, using `title`.
+  link,
+
+  /// Inserts an image, using `!alt text`.
+  image,
+
+  /// Inserts a table template.
+  table,
+
+  /// Applies fenced code block style, using ``` ```.
+  fencedCode,
+
+  /// Inserts a footnote.
+  footnote,
+
+  /// Adds a custom ID to a heading.
+  headingId,
+
+  /// Inserts a definition list.
+  definitionList,
+
+  /// Applies strikethrough style, using `~~text~~`.
+  strikethrough,
+
+  /// Inserts a task list item.
+  taskList,
+
+  /// Inserts an emoji.
+  emoji,
+
+  /// Applies highlight style, using `==text==`.
+  highlight,
+
+  /// Applies subscript style, using `~text~`.
+  subscript,
+
+  /// Applies superscript style, using `^text^`.
+  superscript,
 }
 
 /// A versatile markdown editor widget that allows for both viewing and editing
@@ -88,95 +148,150 @@ class _MdEditorState extends State<MdEditor> {
   /// @param style The `MarkdownStyle` to apply (e.g., `MarkdownStyle.bold`).
   void applyStyle(MarkdownStyle style) {
     var selection = textController.selection;
-    int cursorPosition = selection.base.offset;
-
     String baseText = textController.text;
-    String selected = selection.textInside(baseText);
+
+    if (selection.baseOffset == -1) {
+      selection = TextSelection.collapsed(offset: baseText.length);
+    }
+
+    String textBefore = baseText.substring(0, selection.start);
+    String selected = baseText.substring(selection.start, selection.end);
+    String textAfter = baseText.substring(selection.end);
+
+    String prefix = "";
+    String suffix = "";
+
+    switch (style) {
+      case MarkdownStyle.bold:
+        prefix = "**";
+        suffix = "**";
+        break;
+      case MarkdownStyle.italic:
+        prefix = "*";
+        suffix = "*";
+        break;
+      case MarkdownStyle.h1:
+        prefix = "# ";
+        break;
+      case MarkdownStyle.h2:
+        prefix = "## ";
+        break;
+      case MarkdownStyle.h3:
+        prefix = "### ";
+        break;
+      case MarkdownStyle.blockquote:
+        prefix = "> ";
+        break;
+      case MarkdownStyle.orderedList:
+        prefix = "1. ";
+        break;
+      case MarkdownStyle.unorderedList:
+        prefix = "- ";
+        break;
+      case MarkdownStyle.code:
+        prefix = "`";
+        suffix = "`";
+        break;
+      case MarkdownStyle.horizontalRule:
+        prefix = "\n---\n";
+        break;
+      case MarkdownStyle.link:
+        prefix = "";
+        suffix = "";
+        break;
+      case MarkdownStyle.image:
+        prefix = "!";
+        suffix = "";
+        break;
+      case MarkdownStyle.table:
+        prefix =
+            "| Header | Title |\n| ----------- | ----------- |\n| Paragraph | Text |";
+        break;
+      case MarkdownStyle.fencedCode:
+        prefix = "```\n";
+        suffix = "\n```";
+        break;
+      case MarkdownStyle.footnote:
+        prefix = "[^1]";
+        suffix = "\n\n[^1]: This is the footnote.";
+        break;
+      case MarkdownStyle.headingId:
+        suffix = " {#custom-id}";
+        break;
+      case MarkdownStyle.definitionList:
+        prefix = "term\n: definition";
+        break;
+      case MarkdownStyle.strikethrough:
+        prefix = "~~";
+        suffix = "~~";
+        break;
+      case MarkdownStyle.taskList:
+        prefix = "- [ ] ";
+        break;
+      case MarkdownStyle.emoji:
+        prefix = ":joy:";
+        break;
+      case MarkdownStyle.highlight:
+        prefix = "==";
+        suffix = "==";
+        break;
+      case MarkdownStyle.subscript:
+        prefix = "~";
+        suffix = "~";
+        break;
+      case MarkdownStyle.superscript:
+        prefix = "^";
+        suffix = "^";
+        break;
+    }
 
     if (selected.isEmpty) {
-      // If no text is selected, insert the markdown markers.
-      String newText;
-      int newCursorOffset;
-      switch (style) {
-        case MarkdownStyle.bold:
-          newText = "** **";
-          newCursorOffset = 2;
-          break;
-        case MarkdownStyle.italic:
-          newText = "* *";
-          newCursorOffset = 1;
-          break;
-        case MarkdownStyle.title:
-          newText = "# ";
-          newCursorOffset = 2;
-          break;
-      }
-      String newString =
-          "${selection.textBefore(baseText)}$newText${selection.textAfter(baseText)}";
-      textController.text = newString;
+      String newText = "$prefix$suffix";
+      textController.text = "$textBefore$newText$textAfter";
       textController.selection = TextSelection.collapsed(
-        offset: cursorPosition + newCursorOffset,
+        offset: selection.start + prefix.length,
       );
     } else {
-      // If text is selected, check if style is already applied.
-      String newText = selected;
-      bool styleApplied = false;
-      String prefix = "";
-      String suffix = "";
-
-      switch (style) {
-        case MarkdownStyle.bold:
-          prefix = "**";
-          suffix = "**";
-          if (selection.textBefore(baseText).endsWith(prefix) &&
-              selection.textAfter(baseText).startsWith(suffix)) {
-            styleApplied = true;
-          }
-          break;
-        case MarkdownStyle.italic:
-          prefix = "*";
-          suffix = "*";
-          if (selection.textBefore(baseText).endsWith(prefix) &&
-              selection.textAfter(baseText).startsWith(suffix)) {
-            styleApplied = true;
-          }
-          break;
-        case MarkdownStyle.title:
-          prefix = "# ";
-          suffix = ""; // No suffix for titles
-          if (selection.textBefore(baseText).endsWith(prefix)) {
-            styleApplied = true;
-          }
-          break;
+      bool formatted = false;
+      if (prefix.isNotEmpty && suffix.isNotEmpty) {
+        if (textBefore.endsWith(prefix) && textAfter.startsWith(suffix)) {
+          formatted = true;
+        }
+      } else if (prefix.isNotEmpty) {
+        if (textBefore.endsWith(prefix)) {
+          formatted = true;
+        }
+      } else if (suffix.isNotEmpty) {
+        if (textAfter.startsWith(suffix)) {
+          formatted = true;
+        }
       }
 
-      String newString;
-      if (styleApplied) {
+      if (formatted) {
         // Unapply the style
-        String textBefore = selection.textBefore(baseText);
-        String textAfter = selection.textAfter(baseText);
+        String newBefore = textBefore;
+        String newAfter = textAfter;
 
-        // Remove prefix
-        if (textBefore.endsWith(prefix)) {
-          textBefore = textBefore.substring(
-            0,
-            textBefore.length - prefix.length,
-          );
+        if (prefix.isNotEmpty) {
+          newBefore = newBefore.substring(0, newBefore.length - prefix.length);
+        }
+        if (suffix.isNotEmpty) {
+          newAfter = newAfter.substring(suffix.length);
         }
 
-        // Remove suffix
-        if (textAfter.startsWith(suffix)) {
-          textAfter = textAfter.substring(suffix.length);
-        }
-
-        newString = "$textBefore$selected$textAfter";
-        textController.text = newString;
+        textController.text = "$newBefore$selected$newAfter";
+        textController.selection = TextSelection(
+          baseOffset: newBefore.length,
+          extentOffset: newBefore.length + selected.length,
+        );
       } else {
         // Apply the style
-        newText = "$prefix$selected$suffix";
-        newString =
-            "${selection.textBefore(baseText)}$newText${selection.textAfter(baseText)}";
-        textController.text = newString;
+        textController.text = "$textBefore$prefix$selected$suffix$textAfter";
+        textController.selection = TextSelection(
+          baseOffset: textBefore.length,
+          extentOffset:
+              textBefore.length + prefix.length + selected.length + suffix.length,
+        );
       }
     }
     widget.onTextChanged?.call(textController.text);
@@ -222,8 +337,9 @@ class _MdEditorState extends State<MdEditor> {
             child: Column(
               children: [
                 /// Toolbar for markdown style buttons.
-                Row(
-                  children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(children: [
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Save',
@@ -237,29 +353,143 @@ class _MdEditorState extends State<MdEditor> {
                     ),
                     IconButton(
                       style: buttonStyle(),
+                      tooltip: 'H1',
+                      onPressed: () => applyStyle(MarkdownStyle.h1),
+                      icon: PhosphorIcon(PhosphorIconsBold.textHOne),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'H2',
+                      onPressed: () => applyStyle(MarkdownStyle.h2),
+                      icon: PhosphorIcon(PhosphorIconsBold.textHTwo),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'H3',
+                      onPressed: () => applyStyle(MarkdownStyle.h3),
+                      icon: PhosphorIcon(PhosphorIconsBold.textHThree),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
                       tooltip: 'Bold',
-                      onPressed: () {
-                        applyStyle(MarkdownStyle.bold);
-                      },
+                      onPressed: () => applyStyle(MarkdownStyle.bold),
                       icon: PhosphorIcon(PhosphorIconsBold.textB),
                     ),
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Italic',
-                      onPressed: () {
-                        applyStyle(MarkdownStyle.italic);
-                      },
+                      onPressed: () => applyStyle(MarkdownStyle.italic),
                       icon: PhosphorIcon(PhosphorIconsBold.textItalic),
                     ),
                     IconButton(
                       style: buttonStyle(),
-                      tooltip: 'Title',
-                      onPressed: () {
-                        applyStyle(MarkdownStyle.title);
-                      },
-                      icon: PhosphorIcon(PhosphorIconsBold.textH),
+                      tooltip: 'Strikethrough',
+                      onPressed: () => applyStyle(MarkdownStyle.strikethrough),
+                      icon: PhosphorIcon(PhosphorIconsBold.textStrikethrough),
                     ),
-                  ],
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Highlight',
+                      onPressed: () => applyStyle(MarkdownStyle.highlight),
+                      icon: PhosphorIcon(PhosphorIconsBold.highlighter),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Subscript',
+                      onPressed: () => applyStyle(MarkdownStyle.subscript),
+                      icon: PhosphorIcon(PhosphorIconsBold.textSubscript),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Superscript',
+                      onPressed: () => applyStyle(MarkdownStyle.superscript),
+                      icon: PhosphorIcon(PhosphorIconsBold.textSuperscript),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Blockquote',
+                      onPressed: () => applyStyle(MarkdownStyle.blockquote),
+                      icon: PhosphorIcon(PhosphorIconsBold.quotes),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Code',
+                      onPressed: () => applyStyle(MarkdownStyle.code),
+                      icon: PhosphorIcon(PhosphorIconsBold.code),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Fenced Code',
+                      onPressed: () => applyStyle(MarkdownStyle.fencedCode),
+                      icon: PhosphorIcon(PhosphorIconsBold.bracketsCurly),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Link',
+                      onPressed: () => applyStyle(MarkdownStyle.link),
+                      icon: PhosphorIcon(PhosphorIconsBold.link),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Image',
+                      onPressed: () => applyStyle(MarkdownStyle.image),
+                      icon: PhosphorIcon(PhosphorIconsBold.image),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Table',
+                      onPressed: () => applyStyle(MarkdownStyle.table),
+                      icon: PhosphorIcon(PhosphorIconsBold.table),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Ordered List',
+                      onPressed: () => applyStyle(MarkdownStyle.orderedList),
+                      icon: PhosphorIcon(PhosphorIconsBold.listNumbers),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Unordered List',
+                      onPressed: () => applyStyle(MarkdownStyle.unorderedList),
+                      icon: PhosphorIcon(PhosphorIconsBold.listBullets),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Task List',
+                      onPressed: () => applyStyle(MarkdownStyle.taskList),
+                      icon: PhosphorIcon(PhosphorIconsBold.checkSquare),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Definition List',
+                      onPressed: () => applyStyle(MarkdownStyle.definitionList),
+                      icon: PhosphorIcon(PhosphorIconsBold.list),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Horizontal Rule',
+                      onPressed: () => applyStyle(MarkdownStyle.horizontalRule),
+                      icon: PhosphorIcon(PhosphorIconsBold.minus),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Footnote',
+                      onPressed: () => applyStyle(MarkdownStyle.footnote),
+                      icon: PhosphorIcon(PhosphorIconsBold.asterisk),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Heading ID',
+                      onPressed: () => applyStyle(MarkdownStyle.headingId),
+                      icon: PhosphorIcon(PhosphorIconsBold.tag),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Emoji',
+                      onPressed: () => applyStyle(MarkdownStyle.emoji),
+                      icon: PhosphorIcon(PhosphorIconsBold.smiley),
+                    ),
+                  ]),
                 ),
                 Expanded(
                   child: TextField(
