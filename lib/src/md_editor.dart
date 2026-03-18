@@ -429,6 +429,162 @@ class _MdEditorState extends State<MdEditor> {
     }
   }
 
+  Future<void> _onTapImage() async {
+    var selection = textController.selection;
+    final text = textController.text;
+
+    if (selection.baseOffset == -1) {
+      selection = TextSelection.collapsed(offset: text.length);
+    }
+
+    final selectedText = text.substring(selection.start, selection.end);
+    String? inputUrl;
+    String? inputAlt;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        final urlController = TextEditingController();
+        final altController = TextEditingController(text: selectedText);
+        return AlertDialog(
+          title: const Text('Insert Image'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: urlController,
+                decoration: const InputDecoration(
+                  labelText: 'URL',
+                  hintText: 'https://example.com/image.png',
+                ),
+              ),
+              TextField(
+                controller: altController,
+                decoration: const InputDecoration(
+                  labelText: 'Alt Text',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                inputUrl = urlController.text;
+                inputAlt = altController.text;
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (inputUrl != null && inputAlt != null) {
+      final newText = '![$inputAlt]($inputUrl)';
+      final textBefore = text.substring(0, selection.start);
+      final textAfter = text.substring(selection.end);
+
+      textController.text = '$textBefore$newText$textAfter';
+      textController.selection = TextSelection.collapsed(
+        offset: selection.start + newText.length,
+      );
+      widget.onTextChanged?.call(textController.text);
+    }
+  }
+
+  Future<void> _onTapTable() async {
+    var selection = textController.selection;
+    final text = textController.text;
+
+    if (selection.baseOffset == -1) {
+      selection = TextSelection.collapsed(offset: text.length);
+    }
+
+    int? inputRows;
+    int? inputCols;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        final rowsController = TextEditingController(text: '2');
+        final colsController = TextEditingController(text: '2');
+        return AlertDialog(
+          title: const Text('Insert Table'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: rowsController,
+                decoration: const InputDecoration(
+                  labelText: 'Rows',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: colsController,
+                decoration: const InputDecoration(
+                  labelText: 'Columns',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                inputRows = int.tryParse(rowsController.text);
+                inputCols = int.tryParse(colsController.text);
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (inputRows != null && inputCols != null) {
+      String tableMarkdown = '';
+      // Header
+      tableMarkdown += '|';
+      for (int i = 0; i < inputCols!; i++) {
+        tableMarkdown += ' Header |';
+      }
+      tableMarkdown += '\n|';
+      // Separator
+      for (int i = 0; i < inputCols!; i++) {
+        tableMarkdown += ' ----------- |';
+      }
+      tableMarkdown += '\n';
+      // Body
+      for (int r = 0; r < inputRows!; r++) {
+        tableMarkdown += '|';
+        for (int c = 0; c < inputCols!; c++) {
+          tableMarkdown += ' Cell |';
+        }
+        tableMarkdown += '\n';
+      }
+
+      final textBefore = text.substring(0, selection.start);
+      final textAfter = text.substring(selection.end);
+
+      textController.text = '$textBefore$tableMarkdown$textAfter';
+      textController.selection = TextSelection.collapsed(
+        offset: selection.start + tableMarkdown.length,
+      );
+      widget.onTextChanged?.call(textController.text);
+    }
+  }
+
   /// Returns a `ButtonStyle` to ensure consistent styling for the toolbar icons.
   ButtonStyle buttonStyle() {
     return ButtonStyle(
@@ -538,13 +694,13 @@ class _MdEditorState extends State<MdEditor> {
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Image',
-                      onPressed: () => applyStyle(MarkdownStyle.image),
+                      onPressed: _onTapImage,
                       icon: PhosphorIcon(PhosphorIconsBold.image),
                     ),
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Table',
-                      onPressed: () => applyStyle(MarkdownStyle.table),
+                      onPressed: _onTapTable,
                       icon: PhosphorIcon(PhosphorIconsBold.table),
                     ),
                     IconButton(
