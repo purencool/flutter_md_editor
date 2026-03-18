@@ -180,6 +180,7 @@ class _MdEditorState extends State<MdEditor> {
         textController.text = newString;
       }
     }
+    widget.onTextChanged?.call(textController.text);
   }
 
   /// Returns a `ButtonStyle` to ensure consistent styling for the toolbar icons.
@@ -260,6 +261,7 @@ class _MdEditorState extends State<MdEditor> {
                     expands: true,
                     minLines: null,
                     maxLines: null,
+                    onChanged: widget.onTextChanged,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: "Type here...",
