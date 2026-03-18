@@ -46,13 +46,13 @@ enum MarkdownStyle {
   fencedCode,
 
   /// Inserts a footnote.
-  footnote,
+  //footnote,
 
   /// Adds a custom ID to a heading.
-  headingId,
+  //headingId,
 
   /// Inserts a definition list.
-  definitionList,
+  //definitionList,
 
   /// Applies strikethrough style, using `~~text~~`.
   strikethrough,
@@ -61,16 +61,16 @@ enum MarkdownStyle {
   taskList,
 
   /// Inserts an emoji.
-  emoji,
+  //emoji,
 
   /// Applies highlight style, using `==text==`.
-  highlight,
+  //highlight,
 
   /// Applies subscript style, using `~text~`.
-  subscript,
+  //subscript,
 
   /// Applies superscript style, using `^text^`.
-  superscript,
+  //superscript,
 }
 
 /// A versatile markdown editor widget that allows for both viewing and editing
@@ -211,16 +211,16 @@ class _MdEditorState extends State<MdEditor> {
         prefix = "```\n";
         suffix = "\n```";
         break;
-      case MarkdownStyle.footnote:
-        prefix = "[^1]";
-        suffix = "\n\n[^1]: This is the footnote.";
-        break;
-      case MarkdownStyle.headingId:
-        suffix = " {#custom-id}";
-        break;
-      case MarkdownStyle.definitionList:
-        prefix = "term\n: definition";
-        break;
+      // case MarkdownStyle.footnote:
+      //  prefix = "[^1]";
+      //  suffix = "\n\n[^1]: This is the footnote.";
+      //  break;
+      // case MarkdownStyle.headingId:
+      //  suffix = " {#custom-id}";
+      //  break;
+      // case MarkdownStyle.definitionList:
+      //  prefix = "term\n: definition";
+      //  break;
       case MarkdownStyle.strikethrough:
         prefix = "~~";
         suffix = "~~";
@@ -228,21 +228,21 @@ class _MdEditorState extends State<MdEditor> {
       case MarkdownStyle.taskList:
         prefix = "- [ ] ";
         break;
-      case MarkdownStyle.emoji:
-        prefix = ":joy:";
-        break;
-      case MarkdownStyle.highlight:
-        prefix = "==";
-        suffix = "==";
-        break;
-      case MarkdownStyle.subscript:
-        prefix = "~";
-        suffix = "~";
-        break;
-      case MarkdownStyle.superscript:
-        prefix = "^";
-        suffix = "^";
-        break;
+    //  case MarkdownStyle.emoji:
+    //    prefix = ":joy:";
+    //    break;
+    //  case MarkdownStyle.highlight:
+    //    prefix = "==";
+    //    suffix = "==";
+    //    break;
+    //  case MarkdownStyle.subscript:
+    //    prefix = "~";
+    //    suffix = "~";
+    //    break;
+    //  case MarkdownStyle.superscript:
+    //    prefix = "^";
+    //    suffix = "^";
+    //    break;
     }
 
     if (selected.isEmpty) {
@@ -308,31 +308,6 @@ class _MdEditorState extends State<MdEditor> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        /// Displays the markdown content when not in editing mode.
-        if (!isEditing)
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                if (editable) {
-                  setState(() {
-                    isEditing = true;
-                  });
-                }
-              },
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  textController.text.isEmpty
-                      ? 'No content'
-                      : textController.text,
-                ),
-              ),
-            ),
-          ),
-
-        /// Displays the text field and the editing toolbar when in editing mode.
-        if (isEditing)
           Expanded(
             child: Column(
               children: [
@@ -386,24 +361,24 @@ class _MdEditorState extends State<MdEditor> {
                       onPressed: () => applyStyle(MarkdownStyle.strikethrough),
                       icon: PhosphorIcon(PhosphorIconsBold.textStrikethrough),
                     ),
-                    IconButton(
-                      style: buttonStyle(),
-                      tooltip: 'Highlight',
-                      onPressed: () => applyStyle(MarkdownStyle.highlight),
-                      icon: PhosphorIcon(PhosphorIconsBold.highlighter),
-                    ),
-                    IconButton(
-                      style: buttonStyle(),
-                      tooltip: 'Subscript',
-                      onPressed: () => applyStyle(MarkdownStyle.subscript),
-                      icon: PhosphorIcon(PhosphorIconsBold.textSubscript),
-                    ),
-                    IconButton(
-                      style: buttonStyle(),
-                      tooltip: 'Superscript',
-                      onPressed: () => applyStyle(MarkdownStyle.superscript),
-                      icon: PhosphorIcon(PhosphorIconsBold.textSuperscript),
-                    ),
+                  //  IconButton(
+                  //    style: buttonStyle(),
+                  //    tooltip: 'Highlight',
+                  //    onPressed: () => applyStyle(MarkdownStyle.highlight),
+                  //    icon: PhosphorIcon(PhosphorIconsBold.highlighter),
+                  //  ),
+                  //  IconButton(
+                  //    style: buttonStyle(),
+                  //    tooltip: 'Subscript',
+                  //    onPressed: () => applyStyle(MarkdownStyle.subscript),
+                  //    icon: PhosphorIcon(PhosphorIconsBold.textSubscript),
+                  //  ),
+                  //  IconButton(
+                  //    style: buttonStyle(),
+                  //    tooltip: 'Superscript',
+                  //    onPressed: () => applyStyle(MarkdownStyle.superscript),
+                  //    icon: PhosphorIcon(PhosphorIconsBold.textSuperscript),
+                  //  ),
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Blockquote',
@@ -458,36 +433,36 @@ class _MdEditorState extends State<MdEditor> {
                       onPressed: () => applyStyle(MarkdownStyle.taskList),
                       icon: PhosphorIcon(PhosphorIconsBold.checkSquare),
                     ),
-                    IconButton(
-                      style: buttonStyle(),
-                      tooltip: 'Definition List',
-                      onPressed: () => applyStyle(MarkdownStyle.definitionList),
-                      icon: PhosphorIcon(PhosphorIconsBold.list),
-                    ),
+                   // IconButton(
+                   //   style: buttonStyle(),
+                   //   tooltip: 'Definition List',
+                   //   onPressed: () => applyStyle(MarkdownStyle.definitionList),
+                   //   icon: PhosphorIcon(PhosphorIconsBold.list),
+                   // ),
                     IconButton(
                       style: buttonStyle(),
                       tooltip: 'Horizontal Rule',
                       onPressed: () => applyStyle(MarkdownStyle.horizontalRule),
                       icon: PhosphorIcon(PhosphorIconsBold.minus),
                     ),
-                    IconButton(
-                      style: buttonStyle(),
-                      tooltip: 'Footnote',
-                      onPressed: () => applyStyle(MarkdownStyle.footnote),
-                      icon: PhosphorIcon(PhosphorIconsBold.asterisk),
-                    ),
-                    IconButton(
-                      style: buttonStyle(),
-                      tooltip: 'Heading ID',
-                      onPressed: () => applyStyle(MarkdownStyle.headingId),
-                      icon: PhosphorIcon(PhosphorIconsBold.tag),
-                    ),
-                    IconButton(
-                      style: buttonStyle(),
-                      tooltip: 'Emoji',
-                      onPressed: () => applyStyle(MarkdownStyle.emoji),
-                      icon: PhosphorIcon(PhosphorIconsBold.smiley),
-                    ),
+                   // IconButton(
+                   //   style: buttonStyle(),
+                   //   tooltip: 'Footnote',
+                   //   onPressed: () => applyStyle(MarkdownStyle.footnote),
+                   //   icon: PhosphorIcon(PhosphorIconsBold.asterisk),
+                   // ),
+                   // IconButton(
+                   //   style: buttonStyle(),
+                   //   tooltip: 'Heading ID',
+                   //   onPressed: () => applyStyle(MarkdownStyle.headingId),
+                   //   icon: PhosphorIcon(PhosphorIconsBold.tag),
+                   // ),
+                   // IconButton(
+                   //   style: buttonStyle(),
+                   //   tooltip: 'Emoji',
+                   //   onPressed: () => applyStyle(MarkdownStyle.emoji),
+                   //   icon: PhosphorIcon(PhosphorIconsBold.smiley),
+                   // ),
                   ],
                 ),
                 Expanded(
