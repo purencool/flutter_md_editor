@@ -158,6 +158,17 @@ class _MdEditorState extends State<MdEditor> {
     String selected = baseText.substring(selection.start, selection.end);
     String textAfter = baseText.substring(selection.end);
 
+    // This is a list of styles that are applied to each line
+    const lineStyles = [
+      MarkdownStyle.h1,
+      MarkdownStyle.h2,
+      MarkdownStyle.h3,
+      MarkdownStyle.blockquote,
+      MarkdownStyle.orderedList,
+      MarkdownStyle.unorderedList,
+      MarkdownStyle.taskList,
+    ];
+
     String prefix = "";
     String suffix = "";
 
@@ -252,46 +263,99 @@ class _MdEditorState extends State<MdEditor> {
         offset: selection.start + prefix.length,
       );
     } else {
-      bool formatted = false;
-      if (prefix.isNotEmpty && suffix.isNotEmpty) {
-        if (textBefore.endsWith(prefix) && textAfter.startsWith(suffix)) {
-          formatted = true;
-        }
-      } else if (prefix.isNotEmpty) {
-        if (textBefore.endsWith(prefix)) {
-          formatted = true;
-        }
-      } else if (suffix.isNotEmpty) {
-        if (textAfter.startsWith(suffix)) {
-          formatted = true;
-        }
-      }
-
-      if (formatted) {
-        // Unapply the style
-        String newBefore = textBefore;
-        String newAfter = textAfter;
-
-        if (prefix.isNotEmpty) {
-          newBefore = newBefore.substring(0, newBefore.length - prefix.length);
-        }
-        if (suffix.isNotEmpty) {
-          newAfter = newAfter.substring(suffix.length);
+      if (lineStyles.contains(style)) {
+        // Handle line-by-line styles for multi-line selections
+        final lines = selected.split('\n');
+        // Check if all lines are already formatted
+        bool allLinesFormatted;
+        if (style == MarkdownStyle.orderedList) {
+          allLinesFormatted =
+              lines.every((line) => RegExp(r'^\d+\. ').hasMatch(line));
+        } else {
+          allLinesFormatted = lines.every((line) => line.startsWith(prefix));
         }
 
-        textController.text = "$newBefore$selected$newAfter";
-        textController.selection = TextSelection(
-          baseOffset: newBefore.length,
-          extentOffset: newBefore.length + selected.length,
-        );
+        if (allLinesFormatted) {
+          // Un-apply the style from each line
+          String newSelectedText;
+          if (style == MarkdownStyle.orderedList) {
+            newSelectedText = lines
+                .map((line) => line.replaceFirst(RegExp(r'^\d+\. '), ''))
+                .join('\n');
+          } else {
+            newSelectedText =
+                lines.map((line) => line.substring(prefix.length)).join('\n');
+          }
+          textController.text = "$textBefore$newSelectedText$textAfter";
+          textController.selection = TextSelection(
+            baseOffset: textBefore.length,
+            extentOffset: textBefore.length + newSelectedText.length,
+          );
+        } else {
+          // Apply the style to each line
+          String newSelectedText;
+          if (style == MarkdownStyle.orderedList) {
+            newSelectedText = lines.asMap().entries.map((entry) {
+              int idx = entry.key;
+              String line = entry.value;
+              // Don't add number to empty lines
+              return line.trim().isEmpty ? line : '${idx + 1}. $line';
+            }).join('\n');
+          } else {
+            newSelectedText = lines.map((line) => '$prefix$line').join('\n');
+          }
+          textController.text = "$textBefore$newSelectedText$textAfter";
+          textController.selection = TextSelection(
+            baseOffset: textBefore.length,
+            extentOffset: textBefore.length + newSelectedText.length,
+          );
+        }
       } else {
-        // Apply the style
-        textController.text = "$textBefore$prefix$selected$suffix$textAfter";
-        textController.selection = TextSelection(
-          baseOffset: textBefore.length,
-          extentOffset:
-              textBefore.length + prefix.length + selected.length + suffix.length,
-        );
+        // Handle wrapping styles
+        bool formatted = false;
+        if (prefix.isNotEmpty && suffix.isNotEmpty) {
+          if (textBefore.endsWith(prefix) && textAfter.startsWith(suffix)) {
+            formatted = true;
+          }
+        } else if (prefix.isNotEmpty) {
+          if (textBefore.endsWith(prefix)) {
+            formatted = true;
+          }
+        } else if (suffix.isNotEmpty) {
+          if (textAfter.startsWith(suffix)) {
+            formatted = true;
+          }
+        }
+
+        if (formatted) {
+          // Unapply the style
+          String newBefore = textBefore;
+          String newAfter = textAfter;
+
+          if (prefix.isNotEmpty) {
+            newBefore =
+                newBefore.substring(0, newBefore.length - prefix.length);
+          }
+          if (suffix.isNotEmpty) {
+            newAfter = newAfter.substring(suffix.length);
+          }
+
+          textController.text = "$newBefore$selected$newAfter";
+          textController.selection = TextSelection(
+            baseOffset: newBefore.length,
+            extentOffset: newBefore.length + selected.length,
+          );
+        } else {
+          // Apply the style
+          textController.text = "$textBefore$prefix$selected$suffix$textAfter";
+          textController.selection = TextSelection(
+            baseOffset: textBefore.length,
+            extentOffset: textBefore.length +
+                prefix.length +
+                selected.length +
+                suffix.length,
+          );
+        }
       }
     }
     widget.onTextChanged?.call(textController.text);
