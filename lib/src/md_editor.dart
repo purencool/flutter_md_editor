@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// An enumeration of the markdown styles that can be applied.
@@ -197,16 +196,23 @@ class _MdEditorState extends State<MdEditor> {
         /// Displays the markdown content when not in editing mode.
         if (!isEditing)
           Expanded(
-            child: Markdown(
-              data: textController.text.isEmpty
-                  ? 'No content'
-                  : textController.text,
-              selectable: editable,
-              onTapText: () {
-                setState(() {
-                  isEditing = true;
-                });
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                if (editable) {
+                  setState(() {
+                    isEditing = true;
+                  });
+                }
               },
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  textController.text.isEmpty
+                      ? 'No content'
+                      : textController.text,
+                ),
+              ),
             ),
           ),
 

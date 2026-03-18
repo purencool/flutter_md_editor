@@ -1,6 +1,7 @@
 name: md_editor
 description: >
-  md_editor is a Flutter widget that provides an integrated Markdown editing experience. It features a built-in toolbar for formatting markdown content seamlessly.
+  md_editor is a Flutter widget that provides an integrated Markdown editing experience. 
+  It features a built-in toolbar for formatting markdown content seamlessly.
 version: 0.1.3
 homepage: https://labs.oresoftware.net/
 repository: https://github.com/Ore-Software-Hub/flutter_md_editor.git
@@ -12,7 +13,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_markdown: ^0.7.7+1
   phosphor_flutter: ^2.1.0
 
 dev_dependencies:
