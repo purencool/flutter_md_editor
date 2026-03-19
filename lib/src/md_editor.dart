@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// An enumeration of the markdown styles that can be applied.
@@ -73,6 +74,11 @@ enum MarkdownStyle {
   //superscript,
 }
 
+/// Defines an intent to select the current line of text.
+class SelectLineIntent extends Intent {
+  const SelectLineIntent();
+}
+
 /// A versatile markdown editor widget that allows for both viewing and editing
 /// of markdown content.
 ///
@@ -120,6 +126,8 @@ class MdEditor extends StatefulWidget {
 
 class _MdEditorState extends State<MdEditor> {
   final TextEditingController textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  late final Map<Type, Action<Intent>> _actions;
 
   bool isEditing = false;
   bool editable = false;
@@ -128,12 +136,16 @@ class _MdEditorState extends State<MdEditor> {
   void initState() {
     textController.text = widget.content;
     editable = widget.editable;
+    _actions = <Type, Action<Intent>>{
+      SelectLineIntent: CallbackAction<SelectLineIntent>(onInvoke: _selectLine),
+    };
     super.initState();
   }
 
   @override
   void dispose() {
     textController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -653,6 +665,32 @@ class _MdEditorState extends State<MdEditor> {
     }
   }
 
+  void _selectLine(SelectLineIntent intent) {
+    final text = textController.text;
+    final selection = textController.selection;
+
+    if (selection.baseOffset == -1) {
+      return;
+    }
+
+    final cursorPosition = selection.start;
+
+    int lineStart = text.lastIndexOf('\n', cursorPosition - 1);
+    lineStart = (lineStart == -1) ? 0 : lineStart + 1;
+
+    int lineEnd = text.indexOf('\n', cursorPosition);
+    if (lineEnd == -1) {
+      lineEnd = text.length;
+    }
+
+    // If the line is already selected, subsequent presses could expand to include the newline,
+    // but for now, this is a simple and predictable implementation.
+    textController.selection = TextSelection(
+      baseOffset: lineStart,
+      extentOffset: lineEnd,
+    );
+  }
+
   void _showHelp() {
     showDialog(
       context: context,
@@ -672,14 +710,14 @@ class _MdEditorState extends State<MdEditor> {
                 Text('• Lists: Create numbered, bulleted, or task lists.'),
                 Text('• Insert: Links, Images, Tables, Code Blocks, separators.'),
                 SizedBox(height: 16),
-                Text('Multi-line Selection Tips:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Keyboard Shortcuts:', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
-                Text('You can apply styles to multiple lines at once:'),
-                Text('1. Select multiple lines of text.'),
-                Text('2. Click a line-style button (Headers, Lists, Blockquote).'),
-                Text('3. The style will apply to each selected line individually.'),
-                SizedBox(height: 4),
-                Text('Example: Selecting 3 lines and clicking "Unordered List" converts them into 3 bullet points.', style: TextStyle(fontStyle: FontStyle.italic)),
+                Text('• Select Text: Hold Shift and use the Arrow Keys.'),
+                Text('• Select Line: Press Ctrl+L (or Cmd+L on macOS).'),
+                SizedBox(height: 16),
+                Text('Multi-line Formatting:', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('After selecting multiple lines (e.g., with Shift+Arrows or Ctrl+L), you can apply line-based styles like headings or lists to all selected lines at once.'),
                 SizedBox(height: 16),
                 Text('Magic Shortcuts:', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
@@ -710,8 +748,18 @@ class _MdEditorState extends State<MdEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
+    return Shortcuts(
+      shortcuts: <ShortcutActivator, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyL):
+            const SelectLineIntent(),
+        // Add Cmd+L for macOS
+        LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyL):
+            const SelectLineIntent(),
+      },
+      child: Actions(
+        actions: _actions,
+        child: Column(
+          children: [
           Expanded(
             child: Column(
               children: [
@@ -877,6 +925,7 @@ class _MdEditorState extends State<MdEditor> {
                 ),
                 Expanded(
                   child: TextField(
+                    focusNode: _focusNode,
                     controller: textController,
                     expands: true,
                     minLines: null,
@@ -891,7 +940,9 @@ class _MdEditorState extends State<MdEditor> {
               ],
             ),
           ),
-      ],
+          ],
+        ),
+      ),
     );
   }
 }
