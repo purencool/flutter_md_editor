@@ -74,19 +74,26 @@ enum MarkdownStyle {
   //superscript,
 }
 
-/// Defines an intent to select the current line of text.
+
+/// An [Intent] to select the current line of text in the editor.
+///
+/// This is typically triggered by a keyboard shortcut, like Ctrl+L or Cmd+L.
 class SelectLineIntent extends Intent {
   const SelectLineIntent();
 }
 
-/// A versatile markdown editor widget that allows for both viewing and editing
-/// of markdown content.
+
+/// A customizable markdown editor with a toolbar and live preview capabilities.
 ///
-/// This widget can be used as a simple markdown viewer when `editable` is
-/// false, or as a full-featured markdown editor with a toolbar when `editable`
-/// is true. The editor provides buttons to apply bold, italic, and title
-/// styles to the text.
+/// The editor allows for text styling through a toolbar and provides "magic shortcuts"
+/// for common markdown syntax. It can be used as a read-only display or an
+/// interactive text field.
 class MdEditor extends StatefulWidget {
+  /// Creates a markdown editor widget.
+  ///
+  /// The [content] is the initial text to display.
+  /// If [editable] is set to `true`, an [onTextChanged] callback must be provided
+  /// to handle text changes.
   const MdEditor({
     super.key,
     required this.content,
@@ -100,25 +107,17 @@ class MdEditor extends StatefulWidget {
   /// The initial markdown content to be displayed and edited.
   final String content;
 
-  /// A boolean that determines whether the content can be edited.
+  /// Determines whether the content of the editor can be changed.
   ///
-  /// If `true`, a toolbar and a text field will be shown.
-  /// If `false`, only the markdown content will be displayed.
+  /// Defaults to `false`. If set to `true`, [onTextChanged] must not be null.
   final bool editable;
 
-  /// A callback function that is triggered when the text changes.
+  /// A callback that is triggered whenever the text content of the editor changes.
   ///
-  /// This function receives the updated content string.
-  ///
-  /// Note: This parameter is required if `editable` is true, as enforced by the `assert`.
+  /// This is only active when [editable] is `true`.
   final void Function(String content)? onTextChanged;
 
-  /// Creates an `MdEditor` widget.
-  ///
-  /// The `content` is the initial markdown string.
-  ///
-  /// The `editable` flag controls the editing mode. If set to `true`, the
-  /// `onTextChanged` callback must also be provided.
+
 
   @override
   State<MdEditor> createState() => _MdEditorState();
@@ -194,6 +193,79 @@ class _MdEditorState extends State<MdEditor> {
       );
       widget.onTextChanged?.call(textController.text);
       return;
+    }
+
+    if (textBefore.endsWith('`il')) {
+      int startIndex = textBefore.lastIndexOf('`li', textBefore.length - 3);
+      if (startIndex != -1) {
+        String newBefore = textBefore.substring(0, startIndex);
+        String contentToFormat = textBefore.substring(
+          startIndex + 3,
+          textBefore.length - 3,
+        );
+        String formattedContent = contentToFormat.split('\n').map((line) {
+          return line.trim().isEmpty ? line : '- $line';
+        }).join('\n');
+
+        String newContent = '$newBefore$formattedContent$textAfter';
+        textController.value = TextEditingValue(
+          text: newContent,
+          selection: TextSelection.collapsed(
+            offset: newBefore.length + formattedContent.length,
+          ),
+        );
+        widget.onTextChanged?.call(textController.text);
+        return;
+      }
+    }
+
+    if (textBefore.endsWith('`lo')) {
+      int startIndex = textBefore.lastIndexOf('`ol', textBefore.length - 3);
+      if (startIndex != -1) {
+        String newBefore = textBefore.substring(0, startIndex);
+        String contentToFormat = textBefore.substring(
+          startIndex + 3,
+          textBefore.length - 3,
+        );
+        int count = 1;
+        String formattedContent = contentToFormat.split('\n').map((line) {
+          return line.trim().isEmpty ? line : '${count++}. $line';
+        }).join('\n');
+
+        String newContent = '$newBefore$formattedContent$textAfter';
+        textController.value = TextEditingValue(
+          text: newContent,
+          selection: TextSelection.collapsed(
+            offset: newBefore.length + formattedContent.length,
+          ),
+        );
+        widget.onTextChanged?.call(textController.text);
+        return;
+      }
+    }
+
+    if (textBefore.endsWith('`lt')) {
+      int startIndex = textBefore.lastIndexOf('`tl', textBefore.length - 3);
+      if (startIndex != -1) {
+        String newBefore = textBefore.substring(0, startIndex);
+        String contentToFormat = textBefore.substring(
+          startIndex + 3,
+          textBefore.length - 3,
+        );
+        String formattedContent = contentToFormat.split('\n').map((line) {
+          return line.trim().isEmpty ? line : '- [ ] $line';
+        }).join('\n');
+
+        String newContent = '$newBefore$formattedContent$textAfter';
+        textController.value = TextEditingValue(
+          text: newContent,
+          selection: TextSelection.collapsed(
+            offset: newBefore.length + formattedContent.length,
+          ),
+        );
+        widget.onTextChanged?.call(textController.text);
+        return;
+      }
     }
 
     final tableMatch = RegExp(r'\`t\[(\d+),(\d+)\]$').firstMatch(textBefore);
@@ -725,6 +797,9 @@ class _MdEditorState extends State<MdEditor> {
                 Text('• "`img " : Insert Image'),
                 Text('• "`link " : Insert Link'),
                 Text('• "`t[rows,cols]" : Insert Table (e.g. `t[3,4])'),
+                Text('• "`li" ... "`il" : Create Unordered List'),
+                Text('• "`ol" ... "`lo" : Create Ordered List'),
+                Text('• "`tl" ... "`lt" : Create Task List'),
               ],
             ),
           ),
