@@ -137,6 +137,93 @@ class _MdEditorState extends State<MdEditor> {
     super.dispose();
   }
 
+  void _onTextChanged(String newText) {
+    final selection = textController.selection;
+    if (selection.baseOffset == -1) {
+      widget.onTextChanged?.call(newText);
+      return;
+    }
+    String textBefore = newText.substring(0, selection.baseOffset);
+    String textAfter = newText.substring(selection.baseOffset);
+
+    if (textBefore.endsWith('```') && selection.baseOffset >= 3) {
+      String newContent = '$textBefore\n\n```$textAfter';
+      textController.value = TextEditingValue(
+        text: newContent,
+        selection: TextSelection.collapsed(offset: selection.baseOffset + 1),
+      );
+      widget.onTextChanged?.call(textController.text);
+      return;
+    }
+
+    if (textBefore.endsWith('img ')) {
+      String replacement = '!';
+      String newBefore = textBefore.substring(0, textBefore.length - 4);
+      String newContent = '$newBefore$replacement$textAfter';
+      textController.value = TextEditingValue(
+        text: newContent,
+        selection: TextSelection.collapsed(
+          offset: newBefore.length + replacement.length,
+        ),
+      );
+      widget.onTextChanged?.call(textController.text);
+      return;
+    }
+
+    if (textBefore.endsWith('link ')) {
+      String replacement = '';
+      String newBefore = textBefore.substring(0, textBefore.length - 5);
+      String newContent = '$newBefore$replacement$textAfter';
+      textController.value = TextEditingValue(
+        text: newContent,
+        selection: TextSelection.collapsed(
+          offset: newBefore.length + replacement.length,
+        ),
+      );
+      widget.onTextChanged?.call(textController.text);
+      return;
+    }
+
+    final tableMatch = RegExp(r't\[(\d+),(\d+)\]$').firstMatch(textBefore);
+    if (tableMatch != null) {
+      int rows = int.parse(tableMatch.group(1)!);
+      int cols = int.parse(tableMatch.group(2)!);
+      String tableMarkdown = _buildTable(rows, cols);
+      String newBefore = textBefore.substring(0, tableMatch.start);
+      String newContent = '$newBefore$tableMarkdown$textAfter';
+      textController.value = TextEditingValue(
+        text: newContent,
+        selection: TextSelection.collapsed(
+          offset: newBefore.length + tableMarkdown.length,
+        ),
+      );
+      widget.onTextChanged?.call(textController.text);
+      return;
+    }
+
+    widget.onTextChanged?.call(newText);
+  }
+
+  String _buildTable(int rows, int cols) {
+    String tableMarkdown = '|';
+    for (int i = 0; i < cols; i++) {
+      tableMarkdown += ' Header |';
+    }
+    tableMarkdown += '\n|';
+    for (int i = 0; i < cols; i++) {
+      tableMarkdown += ' ----------- |';
+    }
+    tableMarkdown += '\n';
+    for (int r = 0; r < rows; r++) {
+      tableMarkdown += '|';
+      for (int c = 0; c < cols; c++) {
+        tableMarkdown += ' Cell |';
+      }
+      tableMarkdown += '\n';
+    }
+    return tableMarkdown;
+  }
+
   /// Applies the specified markdown style to the selected text or at the current
   /// cursor position.
   ///
@@ -553,26 +640,7 @@ class _MdEditorState extends State<MdEditor> {
     );
 
     if (inputRows != null && inputCols != null) {
-      String tableMarkdown = '';
-      // Header
-      tableMarkdown += '|';
-      for (int i = 0; i < inputCols!; i++) {
-        tableMarkdown += ' Header |';
-      }
-      tableMarkdown += '\n|';
-      // Separator
-      for (int i = 0; i < inputCols!; i++) {
-        tableMarkdown += ' ----------- |';
-      }
-      tableMarkdown += '\n';
-      // Body
-      for (int r = 0; r < inputRows!; r++) {
-        tableMarkdown += '|';
-        for (int c = 0; c < inputCols!; c++) {
-          tableMarkdown += ' Cell |';
-        }
-        tableMarkdown += '\n';
-      }
+      String tableMarkdown = _buildTable(inputRows!, inputCols!);
 
       final textBefore = text.substring(0, selection.start);
       final textAfter = text.substring(selection.end);
@@ -583,6 +651,39 @@ class _MdEditorState extends State<MdEditor> {
       );
       widget.onTextChanged?.call(textController.text);
     }
+  }
+
+  void _showHelp() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Help & Keybindings'),
+          content: const SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Toolbar Buttons:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Use the toolbar buttons to apply markdown styles (Bold, Italic, Headers, Lists, etc.) to your text.'),
+                SizedBox(height: 16),
+                Text('Keybindings:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('• Type "```" to insert a code block.'),
+                Text('• Type "img " (followed by space) to insert an image.'),
+                Text('• Type "link " (followed by space) to insert a link.'),
+                Text('• Type "t[row,col]" (e.g., t[4,2]) to insert a table.'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Returns a `ButtonStyle` to ensure consistent styling for the toolbar icons.
@@ -751,6 +852,12 @@ class _MdEditorState extends State<MdEditor> {
                    //   onPressed: () => applyStyle(MarkdownStyle.emoji),
                    //   icon: PhosphorIcon(PhosphorIconsBold.smiley),
                    // ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Help',
+                      onPressed: _showHelp,
+                      icon: PhosphorIcon(PhosphorIconsBold.question),
+                    ),
                   ],
                 ),
                 Expanded(
@@ -759,7 +866,7 @@ class _MdEditorState extends State<MdEditor> {
                     expands: true,
                     minLines: null,
                     maxLines: null,
-                    onChanged: widget.onTextChanged,
+                    onChanged: _onTextChanged,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: "Type here...",
