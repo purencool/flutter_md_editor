@@ -99,6 +99,7 @@ class MdEditor extends StatefulWidget {
     required this.content,
     this.onTextChanged,
     this.editable = false,
+    this.onImageUpload,
   }) : assert(
          editable == false || onTextChanged != null,
          'If "editable" is true, "onTextChanged" is required.',
@@ -117,7 +118,10 @@ class MdEditor extends StatefulWidget {
   /// This is only active when [editable] is `true`.
   final void Function(String content)? onTextChanged;
 
-
+  /// A callback that is triggered when the upload image button is pressed.
+  ///
+  /// Should return the URL or path of the uploaded image.
+  final Future<String?> Function()? onImageUpload;
 
   @override
   State<MdEditor> createState() => _MdEditorState();
@@ -625,9 +629,24 @@ class _MdEditorState extends State<MdEditor> {
             children: [
               TextField(
                 controller: urlController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'URL',
                   hintText: 'https://example.com/image.png',
+                  suffixIcon: widget.onImageUpload != null
+                      ? IconButton(
+                          icon: PhosphorIcon(PhosphorIconsBold.uploadSimple),
+                          tooltip: 'Upload Image',
+                          onPressed: () async {
+                            final String? url = await widget.onImageUpload!();
+                            if (url != null) {
+                              urlController.value = TextEditingValue(
+                                text: url,
+                                selection: TextSelection.collapsed(offset: url.length),
+                              );
+                            }
+                          },
+                        )
+                      : null,
                 ),
               ),
               TextField(
@@ -658,6 +677,80 @@ class _MdEditorState extends State<MdEditor> {
 
     if (inputUrl != null && inputAlt != null) {
       final newText = '![$inputAlt]($inputUrl)';
+      final textBefore = text.substring(0, selection.start);
+      final textAfter = text.substring(selection.end);
+
+      textController.text = '$textBefore$newText$textAfter';
+      textController.selection = TextSelection.collapsed(
+        offset: selection.start + newText.length,
+      );
+      widget.onTextChanged?.call(textController.text);
+    }
+  }
+
+  Future<void> _onTapVideo() async {
+    var selection = textController.selection;
+    final text = textController.text;
+
+    if (selection.baseOffset == -1) {
+      selection = TextSelection.collapsed(offset: text.length);
+    }
+
+    final selectedText = text.substring(selection.start, selection.end);
+    String? inputUrl;
+    String? inputAlt;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        final urlController = TextEditingController();
+        final altController = TextEditingController(text: selectedText);
+        return AlertDialog(
+          title: const Text('Insert Video'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: urlController,
+                decoration: const InputDecoration(
+                  labelText: 'Video URL',
+                  hintText: 'https://example.com/video.mp4',
+                ),
+              ),
+              TextField(
+                controller: altController,
+                decoration: const InputDecoration(
+                  labelText: 'Alt Text',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                inputUrl = urlController.text;
+                inputAlt = altController.text;
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (inputUrl != null && inputAlt != null) {
+      final newText = '''<video width="320" height="240" controls>
+  <source src="$inputUrl" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+[$inputAlt]($inputUrl)''';
+
       final textBefore = text.substring(0, selection.start);
       final textAfter = text.substring(selection.end);
 
@@ -948,6 +1041,12 @@ class _MdEditorState extends State<MdEditor> {
                       tooltip: 'Image',
                       onPressed: _onTapImage,
                       icon: PhosphorIcon(PhosphorIconsBold.image),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Video',
+                      onPressed: _onTapVideo,
+                      icon: PhosphorIcon(PhosphorIconsBold.video),
                     ),
                     IconButton(
                       style: buttonStyle(),
