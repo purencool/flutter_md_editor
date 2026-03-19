@@ -130,6 +130,7 @@ class _MdEditorState extends State<MdEditor> {
 
   bool isEditing = false;
   bool editable = false;
+  double _fontSize = 14.0;
 
   @override
   void initState() {
@@ -763,6 +764,18 @@ class _MdEditorState extends State<MdEditor> {
     );
   }
 
+  void _increaseFontSize() {
+    setState(() {
+      _fontSize += 1.0;
+    });
+  }
+
+  void _decreaseFontSize() {
+    setState(() {
+      if (_fontSize > 8.0) _fontSize -= 1.0;
+    });
+  }
+
   void _showHelp() {
     showDialog(
       context: context,
@@ -992,6 +1005,18 @@ class _MdEditorState extends State<MdEditor> {
                    // ),
                     IconButton(
                       style: buttonStyle(),
+                      tooltip: 'Increase font size',
+                      onPressed: _increaseFontSize,
+                      icon: PhosphorIcon(PhosphorIconsBold.plus),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
+                      tooltip: 'Decrease font size',
+                      onPressed: _decreaseFontSize,
+                      icon: PhosphorIcon(PhosphorIconsBold.minus),
+                    ),
+                    IconButton(
+                      style: buttonStyle(),
                       tooltip: 'Help',
                       onPressed: _showHelp,
                       icon: PhosphorIcon(PhosphorIconsBold.question),
@@ -1006,6 +1031,7 @@ class _MdEditorState extends State<MdEditor> {
                     minLines: null,
                     maxLines: null,
                     onChanged: _onTextChanged,
+                    style: TextStyle(fontSize: _fontSize),
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: "Type here...",
