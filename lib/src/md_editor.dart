@@ -156,8 +156,8 @@ class _MdEditorState extends State<MdEditor> {
       return;
     }
 
-    if (textBefore.endsWith('img ')) {
-      String replacement = '!';
+    if (textBefore.endsWith('`img ')) {
+      String replacement = '![]()';
       String newBefore = textBefore.substring(0, textBefore.length - 4);
       String newContent = '$newBefore$replacement$textAfter';
       textController.value = TextEditingValue(
@@ -170,8 +170,8 @@ class _MdEditorState extends State<MdEditor> {
       return;
     }
 
-    if (textBefore.endsWith('link ')) {
-      String replacement = '';
+    if (textBefore.endsWith('`link ')) {
+      String replacement = '[]()';
       String newBefore = textBefore.substring(0, textBefore.length - 5);
       String newContent = '$newBefore$replacement$textAfter';
       textController.value = TextEditingValue(
@@ -184,7 +184,7 @@ class _MdEditorState extends State<MdEditor> {
       return;
     }
 
-    final tableMatch = RegExp(r't\[(\d+),(\d+)\]$').firstMatch(textBefore);
+    final tableMatch = RegExp(r'\`t\[(\d+),(\d+)\]$').firstMatch(textBefore);
     if (tableMatch != null) {
       int rows = int.parse(tableMatch.group(1)!);
       int cols = int.parse(tableMatch.group(2)!);
@@ -658,20 +658,35 @@ class _MdEditorState extends State<MdEditor> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Help & Keybindings'),
+          title: const Text('Help & Usage'),
           content: const SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Toolbar Buttons:', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text('Use the toolbar buttons to apply markdown styles (Bold, Italic, Headers, Lists, etc.) to your text.'),
+                Text('Toolbar Actions:', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('• Bold, Italic, Strikethrough, Code: Apply formatting to selected text.'),
+                Text('• H1, H2, H3: Insert section headings.'),
+                Text('• Blockquote: Format as a quote.'),
+                Text('• Lists: Create numbered, bulleted, or task lists.'),
+                Text('• Insert: Links, Images, Tables, Code Blocks, separators.'),
                 SizedBox(height: 16),
-                Text('Keybindings:', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text('• Type "```" to insert a code block.'),
-                Text('• Type "img " (followed by space) to insert an image.'),
-                Text('• Type "link " (followed by space) to insert a link.'),
-                Text('• Type "t[row,col]" (e.g., t[4,2]) to insert a table.'),
+                Text('Multi-line Selection Tips:', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('You can apply styles to multiple lines at once:'),
+                Text('1. Select multiple lines of text.'),
+                Text('2. Click a line-style button (Headers, Lists, Blockquote).'),
+                Text('3. The style will apply to each selected line individually.'),
+                SizedBox(height: 4),
+                Text('Example: Selecting 3 lines and clicking "Unordered List" converts them into 3 bullet points.', style: TextStyle(fontStyle: FontStyle.italic)),
+                SizedBox(height: 16),
+                Text('Magic Shortcuts:', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('• "```" : Insert Code Block'),
+                Text('• "`img " : Insert Image'),
+                Text('• "`link " : Insert Link'),
+                Text('• "`t[rows,cols]" : Insert Table (e.g. `t[3,4])'),
               ],
             ),
           ),
